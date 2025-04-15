@@ -1,0 +1,35 @@
+services:
+  api:
+    build: .
+    container_name: game-lobby-api
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    container_name: game-lobby-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  client:
+    build: ./game-lobby-client
+    container_name: game-lobby-client
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./game-lobby-client:/app
+      - /app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  mongo-data:
