@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Session, SessionDocument } from './entities/session.entity';
 import { Model, Types } from 'mongoose';
@@ -6,8 +6,10 @@ import { User, UserDocument } from '../user/entities/user.entity';
 import { GameGateway } from './game.gateway';
 
 @Injectable()
-export class GameService {
+export class GameService implements OnModuleInit {
   private nextSessionTime: Date | null = null;
+  private sessionDuration = 20_000; // in ms
+  private gapBetweenSessions = 30_000; // in ms
 
   constructor(
     @InjectModel(Session.name) private sessionModel: Model<SessionDocument>,
@@ -15,42 +17,100 @@ export class GameService {
     private readonly gameGateway: GameGateway,
   ) {}
 
-  async startSession(duration: number) {
+  async onModuleInit() {
+    console.log('🚀 GameService initialized — checking existing session.');
+
+    const activeSession = await this.sessionModel.findOne({ isActive: true });
+
+    const now = new Date();
+
+    if (activeSession && activeSession.endsAt > now) {
+      console.log(
+        '⚠️ Existing active session found — skipping new session start.',
+      );
+      this.nextSessionTime = new Date(
+        activeSession.endsAt.getTime() + this.gapBetweenSessions,
+      );
+      return;
+    }
+
+    // Either no session or it's expired — clean up and start a new one
+    await this.sessionModel.updateMany({ isActive: true }, { isActive: false });
+
+    await this.startSession();
+  }
+
+  async startSession() {
     const activeSession = await this.sessionModel.findOne({ isActive: true });
     if (activeSession) {
       throw new BadRequestException('A session is already active.');
     }
 
-    if (this.nextSessionTime && new Date() < this.nextSessionTime) {
-      throw new BadRequestException(
-        `Next session can only start at ${this.nextSessionTime.toISOString()}`,
-      );
-    }
-
     const now = new Date();
+    const endsAt = new Date(now.getTime() + this.sessionDuration);
+
     const session = new this.sessionModel({
       isActive: true,
       startedAt: now,
-      endsAt: new Date(now.getTime() + duration * 1000),
+      endsAt: endsAt,
     });
     await session.save();
 
-    this.nextSessionTime = new Date(session.endsAt.getTime() + 30_000);
+    this.nextSessionTime = new Date(endsAt.getTime() + this.gapBetweenSessions);
 
-    // Notify clients via WebSocket
     this.gameGateway.sessionStarted({
-      endsAt: session.endsAt,
+      endsAt: endsAt,
       nextSessionStartsAt: this.nextSessionTime,
     });
 
+    // Automatically end the session when time's up
+    setTimeout(() => {
+      this.endSessionAndScheduleNext().catch((err) => {
+        console.error('Error ending session:', err);
+      });
+    }, this.sessionDuration);
+
     return {
       message: 'Session started.',
-      sessionEndsAt: session.endsAt,
+      sessionEndsAt: endsAt,
       nextSessionStartsAt: this.nextSessionTime,
     };
   }
 
-  async joinSession(userId: string, username: string) {
+  private async endSessionAndScheduleNext() {
+    const session = await this.sessionModel.findOne({ isActive: true });
+    if (!session) return;
+
+    session.isActive = false;
+    session.winningNumber = Math.floor(Math.random() * 10) + 1;
+
+    const winners = session.players.filter(
+      (p) => p.pickedNumber === session.winningNumber,
+    );
+
+    for (const winner of winners) {
+      await this.userModel.findByIdAndUpdate(winner.userId, {
+        $inc: { wins: 1 },
+      });
+    }
+
+    await session.save();
+
+    this.gameGateway.sessionEnded({
+      winningNumber: session.winningNumber,
+      winners,
+      nextSessionStartsAt: this.nextSessionTime as Date,
+    });
+
+    // Wait gap then start next session
+    setTimeout(() => {
+      this.startSession().catch((err) => {
+        console.error('Error starting next session:', err);
+      });
+    }, this.gapBetweenSessions);
+  }
+
+  async joinSession(userId: string, username: string, pickedNumber: number) {
     const session = await this.sessionModel.findOne({ isActive: true });
     if (!session) {
       throw new BadRequestException('No active session.');
@@ -62,10 +122,12 @@ export class GameService {
       throw new BadRequestException('User already joined this session.');
     }
 
-    const pickedNumber = Math.floor(Math.random() * 10) + 1;
-
+    // Add the new player to the session
     session.players.push({ userId: objectUserId, username, pickedNumber });
     await session.save();
+
+    // Emit player join event to notify clients
+    this.gameGateway.playerJoined(session.players); // Pass the updated player list
 
     return {
       message: 'Joined session',

@@ -53,7 +53,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid password.');
     }
 
-    return this.generateToken(user);
+    const token = this.generateToken(user);
+
+    const { password: _, ...safeUser } = user.toObject();
+
+    return {
+      token,
+      user: safeUser,
+    };
   }
 
   private generateToken(user: UserDocument) {

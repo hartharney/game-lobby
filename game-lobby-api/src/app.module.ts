@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { GameModule } from './game/game.module';
 
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -17,6 +19,12 @@ dotenv.config();
     GameModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+  ],
 })
 export class AppModule {}

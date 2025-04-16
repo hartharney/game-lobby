@@ -5,6 +5,7 @@ import {
   UseGuards,
   Request,
   BadRequestException,
+  Body,
 } from '@nestjs/common';
 import { GameService } from './game.service';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
@@ -14,10 +15,10 @@ import { JwtRequest } from '../auth/interfaces/jwt-request.interface';
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
-  // Start a new session (for demo/dev only — ideally protected)
+  // Start a new session
   @Post('start-session')
   startSession() {
-    return this.gameService.startSession(20);
+    return this.gameService.startSession(); // ✅ fixed
   }
 
   // Get active session
@@ -29,8 +30,12 @@ export class GameController {
   // Join a session
   @UseGuards(JwtAuthGuard)
   @Post('join')
-  join(@Request() req: JwtRequest) {
-    return this.gameService.joinSession(req.user.userId, req.user.username);
+  join(@Request() req: JwtRequest, @Body() body: { number: number }) {
+    return this.gameService.joinSession(
+      req.user.userId,
+      req.user.username,
+      body.number,
+    );
   }
 
   // End the current session
