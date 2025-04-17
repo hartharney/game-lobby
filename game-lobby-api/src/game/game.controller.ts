@@ -16,9 +16,10 @@ export class GameController {
   constructor(private readonly gameService: GameService) {}
 
   // Start a new session
+  @UseGuards(JwtAuthGuard)
   @Post('start-session')
   startSession() {
-    return this.gameService.startSession(); // ✅ fixed
+    return this.gameService.startSession();
   }
 
   // Get active session
@@ -27,15 +28,26 @@ export class GameController {
     return this.gameService.getActiveSession();
   }
 
-  // Join a session
+  // Join Lobby
   @UseGuards(JwtAuthGuard)
-  @Post('join')
-  join(@Request() req: JwtRequest, @Body() body: { number: number }) {
-    return this.gameService.joinSession(
-      req.user.userId,
-      req.user.username,
-      body.number,
-    );
+  @Post('join-lobby')
+  joinLobby(
+    @Request() req: JwtRequest,
+    @Body() body: { pickedNumber: string },
+  ) {
+    const { userId, username } = req.user;
+    const { pickedNumber } = body;
+    if (!pickedNumber) {
+      throw new BadRequestException('pickedNumber is required.');
+    }
+    return this.gameService.joinLobby(userId, username, +pickedNumber);
+  }
+
+  // Leave a lobby
+  @UseGuards(JwtAuthGuard)
+  @Post('leave-lobby')
+  leaveLobby(@Request() req: JwtRequest) {
+    return this.gameService.leaveLobby(req.user.userId);
   }
 
   // End the current session

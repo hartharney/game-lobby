@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useLogin } from "@/api/mutation";
 import { Loader, Eye, EyeOff } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import toast from "react-hot-toast";
+import axios from "axios";
 
 type LoginPageProps = {
   onClose?: () => void;
@@ -15,17 +16,20 @@ export default function LoginPage({ onClose }: LoginPageProps) {
   const [showPassword, setShowPassword] = useState(false);
   const { mutate, isPending } = useLogin();
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     mutate(form, {
       onSuccess: () => {
         toast.success("Login successful!");
         resetFormAndClose();
       },
-      onError: (error: any) => {
+      onError: (error) => {
         console.error("Login error:", error);
+
         const message =
-          error.response?.data?.message || error.message || "Login failed!";
+          (axios.isAxiosError(error) ? error.message : error.message) ||
+          "Login failed!";
+
         toast.error(message);
       },
     });
@@ -57,7 +61,7 @@ export default function LoginPage({ onClose }: LoginPageProps) {
             placeholder="Enter your username"
             value={form.username}
             onChange={(e) => setForm({ ...form, username: e.target.value })}
-            className="border-2 border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="border-2 text-black border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
           />
         </div>
 
@@ -71,7 +75,7 @@ export default function LoginPage({ onClose }: LoginPageProps) {
               placeholder="Enter your password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="border-2 border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="border-2 text-black border-gray-300 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
             />
             <button
               type="button"

@@ -27,7 +27,7 @@ const AuthModal = ({
     setTimeout(() => {
       setIsLogin(!isLogin);
       setIsTransitioning(false);
-    }, 300); // Duration of the transition (300ms)
+    }, 300);
   };
 
   return (
@@ -58,7 +58,7 @@ const AuthModal = ({
           <span className="text-sm text-gray-500">
             {isLogin ? (
               <>
-                Don't have an account?{" "}
+                Don&rsquo;t have an account?{" "}
                 <button
                   onClick={handleSwitch}
                   className="text-purple-600 hover:underline"

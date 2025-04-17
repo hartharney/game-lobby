@@ -13,11 +13,16 @@ export class UserController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+    return this.userService.findOne(id);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
+  }
+
+  @Post('record-history/:userId')
+  recordWin(@Param('userId') userId: string) {
+    return this.userService.recordWin(userId);
   }
 }

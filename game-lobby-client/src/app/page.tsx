@@ -56,7 +56,7 @@ export default function LandingPage() {
 
         {/* Hamburger Button */}
         <button
-          className="md:hidden text-2xl cursor-pointer z-50" // Ensure the button is clickable with z-index
+          className="md:hidden text-2xl cursor-pointer z-50"
           onClick={() => setMenuOpen((prev) => !prev)}
         >
           {menuOpen ? <FiX /> : <FiMenu />}
@@ -77,7 +77,6 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <div className="flex-1 flex flex-col md:flex-row items-center justify-between gap-12 px-6 max-w-7xl w-full mx-auto">
-        {/* Left Section */}
         {/* Left Section */}
         <div className="max-w-xl space-y-6 text-center md:text-left">
           <h1 className="text-5xl md:text-6xl font-bold leading-tight drop-shadow-[0_0_10px_rgba(192,132,252,0.8)]">

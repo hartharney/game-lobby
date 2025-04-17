@@ -1,4 +1,3 @@
-// src/lib/axios.ts
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -10,7 +9,8 @@ const api = axios.create({
 // REQUEST interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token;
+    const token = localStorage.getItem("token");
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

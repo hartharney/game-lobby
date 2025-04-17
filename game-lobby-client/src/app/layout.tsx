@@ -17,12 +17,46 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Harneys Game Lobby",
   description:
-    "A multi user game where users can take a guess at a winning number",
+    "Join the Harneys Game Lobby — a fun, multi-user game where players guess a winning number in real time!",
+  keywords: [
+    "game lobby",
+    "multi-player game",
+    "number guessing game",
+    "Harneys",
+    "online game",
+  ],
+  authors: [{ name: "Harneys", url: "https://harneys.com" }],
+  creator: "Harneys",
+  openGraph: {
+    title: "Harneys Game Lobby",
+    description:
+      "Join the Harneys Game Lobby — guess the winning number and compete live with other players!",
+    url: "https://harneys-game.com",
+    siteName: "Harneys Game Lobby",
+    images: [
+      {
+        url: "/images/lobby-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "Harneys Game Lobby Preview",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Harneys Game Lobby",
+    description:
+      "A fun, live multi-user game — guess the winning number and compete with others in real time!",
+    images: ["/images/lobby-preview.png"],
+  },
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
+  themeColor: "#0f172a",
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({

@@ -1,4 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎮 Game Lobby API — NextJs 🐺
+
+A simple, real-time game lobby system where users can join game sessions, pick a number, and compete to win.  
+Built with **NextJS** and **Tanstack**,
+
+---
+
+## Features
+
+- **User Authentication** (JWT-based)
+- **Game session management** (start, join, end)
+- **Random number pick (1-10)**
+- **Automatic winner calculation**
+- **Persistent session history** (MongoDB)
+- **Leaderboard (Top 10 users by wins)**
+- **Dockerized for local development**
+
+> Directory tree (depth: 1)
+
+```bash
+.
+├── Dockerfile
+├── README.md
+├── eslint.config.mjs
+├── next-env.d.ts
+├── next.config.ts
+├── node_modules
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── public
+├── src
+└── tsconfig.json
+```
 
 ## Getting Started
 
@@ -16,21 +49,51 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Pages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Page        | Endpoint     | Description                       | Auth |
+| :---------- | :----------- | :-------------------------------- | :--- |
+| Home        | /            | Landing Page                      | ❌   |
+| Leaderboard | /leaderboard | View player standings             | ❌   |
+| Lobby       | /lobby       | Join active session & pick number | ✅   |
+| Register    | (modal)      | Register account                  | ❌   |
+| Login       | (modal)      | Login account                     | ❌   |
 
-## Learn More
+## Game Rules
 
-To learn more about Next.js, take a look at the following resources:
+- A session lasts for 20 seconds.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Players join while it’s active.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Each player picks a random number (1-10) on joining.
 
-## Deploy on Vercel
+#### At the end:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- A winning number is randomly chosen.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Players who picked the correct number gain a win.
+
+- Top players ranked via /game/leaderboard.
+
+## Tech Stack
+
+## 🖥️ Frontend Tech Stack
+
+| Logo                                                                      | Tool               | Description                             |
+| :------------------------------------------------------------------------ | :----------------- | :-------------------------------------- |
+| ![Next.js](https://nextjs.org/static/favicon/favicon-32x32.png)           | **Next.js**        | React-based framework for SSR & SPA     |
+| ![TanStack Query](https://tanstack.com/query/v4/images/emblem-dark.svg)   | **TanStack Query** | Powerful data fetching & caching        |
+| ![Zustand](https://avatars.githubusercontent.com/u/72518640?s=200&v=4)    | **Zustand**        | Minimalistic state management library   |
+| ![Socket.IO](https://socket.io/images/logo.svg)                           | **Socket.IO**      | Real-time, bi-directional communication |
+| ![TypeScript](https://cdn.worldvectorlogo.com/logos/typescript.svg)       | **TypeScript**     | Type-safe JavaScript                    |
+| ![Tailwind CSS](https://tailwindcss.com/favicons/favicon-32x32.png?v=3)   | **Tailwind CSS**   | Utility-first CSS framework             |
+| ![Framer Motion](https://cdn.worldvectorlogo.com/logos/framer-motion.svg) | **Framer Motion**  | React animations library                |
+
+## Deployment
+
+> - The frontend will be deployable on Vercel / AWS EC2.
+
+## Stay in touch
+
+- Author - [Hart Harney](https://github.com/hartharney)
+- Instagram - [@hartharney](https://instagram.com/hart_harney)

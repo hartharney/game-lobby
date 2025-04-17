@@ -1,31 +1,27 @@
 import { useSocketStore } from "@/api/subscriber";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export const useSessionSocket = () => {
-  const { socket, connect } = useSocketStore();
-  const [session, setSession] = useState<any>(null);
-  const [countdown, setCountdown] = useState<number>(0);
+  const {
+    connect,
+    disconnect,
+    players,
+    sessionStartedPayload,
+    sessionEndedPayload,
+    nextSessionStartsAt,
+    socket,
+  } = useSocketStore();
 
   useEffect(() => {
     connect();
-  }, [connect]);
+    return () => disconnect();
+  }, [connect, disconnect]);
 
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on("sessionUpdate", (data) => {
-      setSession(data);
-    });
-
-    socket.on("countdown", (timeLeft) => {
-      setCountdown(timeLeft);
-    });
-
-    return () => {
-      socket.off("sessionUpdate");
-      socket.off("countdown");
-    };
-  }, [socket]);
-
-  return { session, countdown };
+  return {
+    sessionStartedPayload,
+    sessionEndedPayload,
+    nextSessionStartsAt,
+    players,
+    socket,
+  };
 };

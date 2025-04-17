@@ -24,7 +24,6 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
 
-  // Correct — apply global exception filter
   app.useGlobalFilters(new AllExceptionsFilter());
 
   app.useGlobalPipes(
@@ -39,8 +38,11 @@ async function bootstrap() {
 
   await app.listen(port, '0.0.0.0');
 
-  // Use the logger you created
   logger.log(`🚀 Server running on http://localhost:${port}`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  const logger = new Logger('Bootstrap');
+  logger.error('Error starting the application', error);
+  process.exit(1);
+});

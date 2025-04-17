@@ -21,3 +21,23 @@ export const useLeaderboard = () => {
     },
   });
 };
+
+export const useGetUserHistory = () => {
+  const user = localStorage.getItem("user");
+  const parsedUser = user ? JSON.parse(user) : null;
+
+  return useQuery({
+    queryKey: ["userHistory"],
+    queryFn: async () => {
+      if (!parsedUser?._id) {
+        console.error("User ID is missing or invalid.");
+        return null;
+      }
+
+      const res = await api.get(`/user/${parsedUser._id}`);
+
+      return res.data.data;
+    },
+    enabled: !!parsedUser?._id,
+  });
+};

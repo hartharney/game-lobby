@@ -1,6 +1,5 @@
 "use client";
 
-import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AuthModal from "../modal/AuthModal";
@@ -10,22 +9,28 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  const user = useAuthStore((state) => state.user);
+  const [isMounted, setIsMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted && !localStorage.getItem("token")) {
       setIsModalOpen(true);
     }
-  }, [user]);
+  }, [isMounted]);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     router.push("/");
   };
 
-  if (!user && isModalOpen)
+  if (!isMounted) return null;
+
+  if (!localStorage.getItem("token") && isModalOpen)
     return <AuthModal path="/login" closeModal={handleCloseModal} />;
 
   return <>{children}</>;

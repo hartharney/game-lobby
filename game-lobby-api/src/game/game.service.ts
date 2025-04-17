@@ -1,46 +1,116 @@
-import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  OnModuleInit,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Session, SessionDocument } from './entities/session.entity';
+import { Lobby, LobbyDocument } from './entities/lobby.entity';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../user/entities/user.entity';
 import { GameGateway } from './game.gateway';
+import { Socket } from 'socket.io';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class GameService implements OnModuleInit {
   private nextSessionTime: Date | null = null;
-  private sessionDuration = 20_000; // in ms
-  private gapBetweenSessions = 30_000; // in ms
+  private sessionDuration = 20_000; // 20 seconds in ms
+  private gapBetweenSessions = 30_000; // 30 seconds in ms
 
   constructor(
     @InjectModel(Session.name) private sessionModel: Model<SessionDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Lobby.name) private lobbyModel: Model<LobbyDocument>,
+
+    @Inject(forwardRef(() => GameGateway))
     private readonly gameGateway: GameGateway,
+
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
   ) {}
 
   async onModuleInit() {
     console.log('🚀 GameService initialized — checking existing session.');
 
     const activeSession = await this.sessionModel.findOne({ isActive: true });
-
     const now = new Date();
 
     if (activeSession && activeSession.endsAt > now) {
       console.log(
-        '⚠️ Existing active session found — skipping new session start.',
+        '⚠️ Existing active session found — waiting for it to finish.',
       );
+
       this.nextSessionTime = new Date(
         activeSession.endsAt.getTime() + this.gapBetweenSessions,
       );
+
+      // Calculate remaining time for this session
+      const remainingTime = activeSession.endsAt.getTime() - now.getTime();
+
+      // Schedule the winner reveal + next session scheduling after the remaining time
+      setTimeout(() => {
+        this.revealWinnerAndScheduleNext().catch((err) => {
+          console.error('Error revealing winner:', err);
+        });
+      }, remainingTime);
+
       return;
     }
 
-    // Either no session or it's expired — clean up and start a new one
     await this.sessionModel.updateMany({ isActive: true }, { isActive: false });
-
     await this.startSession();
   }
 
+  async syncStateToClient(socket: Socket) {
+    const state = await this.getCurrentState();
+    this.gameGateway.sendStateToClient(socket, state);
+  }
+
+  async joinLobby(userId: string, username: string, pickedNumber: number) {
+    let lobby = await this.lobbyModel.findOne();
+    if (!lobby) {
+      lobby = new this.lobbyModel();
+    }
+
+    const objectUserId = new Types.ObjectId(userId);
+
+    if (lobby.players.find((p) => p.userId.equals(objectUserId))) {
+      throw new BadRequestException('User already in the lobby.');
+    }
+
+    lobby.players.push({ userId: objectUserId, username, pickedNumber });
+    await lobby.save();
+
+    console.log('lobby in join lobby', lobby);
+
+    this.gameGateway.playersInLobby(lobby.players);
+
+    return {
+      message: 'Joined the lobby',
+      pickedNumber,
+    };
+  }
+
   async startSession() {
+    const lobby = await this.lobbyModel.findOne();
+    // if (!lobby || lobby.players.length === 0) {
+    //   console.log('No players in lobby — session not started.');
+    //   this.nextSessionTime = new Date(Date.now() + this.gapBetweenSessions);
+    //   this.gameGateway.sessionSkipped({
+    //     nextSessionStartsAt: this.nextSessionTime,
+    //   });
+
+    //   // Reschedule next session attempt
+    //   setTimeout(() => {
+    //     this.startSession().catch(console.error);
+    //   }, this.gapBetweenSessions);
+
+    //   return { message: 'No players — session skipped.' };
+    // }
+
     const activeSession = await this.sessionModel.findOne({ isActive: true });
     if (activeSession) {
       throw new BadRequestException('A session is already active.');
@@ -52,22 +122,23 @@ export class GameService implements OnModuleInit {
     const session = new this.sessionModel({
       isActive: true,
       startedAt: now,
-      endsAt: endsAt,
+      endsAt,
+      players: lobby?.players || [],
     });
     await session.save();
 
-    this.nextSessionTime = new Date(endsAt.getTime() + this.gapBetweenSessions);
+    await this.clearLobby();
+    this.gameGateway.playersInLobby([]);
 
+    this.nextSessionTime = new Date(endsAt.getTime() + this.gapBetweenSessions);
     this.gameGateway.sessionStarted({
-      endsAt: endsAt,
+      startedAt: now,
+      endsAt,
       nextSessionStartsAt: this.nextSessionTime,
     });
 
-    // Automatically end the session when time's up
     setTimeout(() => {
-      this.endSessionAndScheduleNext().catch((err) => {
-        console.error('Error ending session:', err);
-      });
+      this.revealWinnerAndScheduleNext().catch(console.error);
     }, this.sessionDuration);
 
     return {
@@ -77,63 +148,155 @@ export class GameService implements OnModuleInit {
     };
   }
 
-  private async endSessionAndScheduleNext() {
+  async getCurrentState() {
+    const activeSession = await this.sessionModel.findOne({ isActive: true });
+    const now = new Date();
+
+    if (activeSession) {
+      const remainingTime = activeSession.endsAt.getTime() - now.getTime();
+      return {
+        status: 'active',
+        startedAt: activeSession.startedAt,
+        endsAt: activeSession.endsAt,
+        remainingTime,
+      };
+    } else {
+      return {
+        status: 'waiting',
+        nextSessionStartsAt: this.nextSessionTime,
+        remainingTime: this.nextSessionTime
+          ? this.nextSessionTime.getTime() - now.getTime()
+          : null,
+      };
+    }
+  }
+
+  // async endSession() {
+  //   const session = await this.sessionModel.findOne({ isActive: true });
+  //   if (!session) {
+  //     throw new BadRequestException('No active session.');
+  //   }
+
+  //   session.isActive = false;
+  //   session.winningNumber = Math.floor(Math.random() * 10) + 1;
+
+  //   const winners = session.players.filter(
+  //     (p) => p.pickedNumber === session.winningNumber,
+  //   );
+
+  //   for (const winner of winners) {
+  //     await this.userModel.findByIdAndUpdate(winner.userId, {
+  //       $inc: { wins: 1 },
+  //     });
+  //   }
+
+  //   await session.save();
+
+  //   this.gameGateway.sessionEnded({
+  //     winningNumber: session.winningNumber,
+  //     winners,
+  //     nextSessionStartsAt: this.nextSessionTime as Date,
+  //   });
+
+  //   await this.clearLobby();
+
+  //   return {
+  //     winningNumber: session.winningNumber,
+  //     winners,
+  //     nextSessionStartsAt: this.nextSessionTime,
+  //   };
+  // }
+
+  private async revealWinnerAndScheduleNext() {
     const session = await this.sessionModel.findOne({ isActive: true });
     if (!session) return;
 
-    session.isActive = false;
+    console.log('session', session);
+
+    // Pick a random winning number
     session.winningNumber = Math.floor(Math.random() * 10) + 1;
 
+    // Find winners
     const winners = session.players.filter(
       (p) => p.pickedNumber === session.winningNumber,
     );
 
-    for (const winner of winners) {
-      await this.userModel.findByIdAndUpdate(winner.userId, {
-        $inc: { wins: 1 },
-      });
+    console.log('winners', winners);
+
+    // Update player records
+    for (const player of session.players) {
+      if (player.pickedNumber === session.winningNumber) {
+        await this.userService.recordWin(player.userId.toString(), 10);
+      } else {
+        await this.userService.recordLoss(player.userId.toString());
+      }
     }
 
+    session.isActive = false;
     await session.save();
 
+    // Notify clients
     this.gameGateway.sessionEnded({
       winningNumber: session.winningNumber,
       winners,
       nextSessionStartsAt: this.nextSessionTime as Date,
     });
 
-    // Wait gap then start next session
+    // Move queue into lobby players
+    const lobby = await this.lobbyModel.findOne();
+    if (lobby) {
+      lobby.players = lobby.queue;
+      lobby.queue = [];
+      await lobby.save();
+
+      this.gameGateway.playersInLobby(lobby.players);
+    }
+
+    // Schedule next session
     setTimeout(() => {
-      this.startSession().catch((err) => {
-        console.error('Error starting next session:', err);
-      });
+      this.startSession().catch(console.error);
     }, this.gapBetweenSessions);
+
+    return {
+      winningNumber: session.winningNumber,
+      winners,
+      nextSessionStartsAt: this.nextSessionTime,
+    };
   }
 
-  async joinSession(userId: string, username: string, pickedNumber: number) {
-    const session = await this.sessionModel.findOne({ isActive: true });
-    if (!session) {
-      throw new BadRequestException('No active session.');
+  private async clearLobby() {
+    await this.lobbyModel.updateOne({}, { $set: { players: [] } });
+  }
+
+  async leaveLobby(userId: string) {
+    const lobby = await this.lobbyModel.findOne();
+    if (!lobby) {
+      throw new BadRequestException('No lobby found.');
     }
 
     const objectUserId = new Types.ObjectId(userId);
 
-    if (session.players.find((p) => p.userId.equals(objectUserId))) {
-      throw new BadRequestException('User already joined this session.');
+    const playerIndex = lobby.players.findIndex((p) =>
+      p.userId.equals(objectUserId),
+    );
+    if (playerIndex !== -1) {
+      lobby.players.splice(playerIndex, 1);
+      await lobby.save();
+      this.gameGateway.playersInLobby([...lobby.players, ...lobby.queue]);
+      return { message: 'Left lobby' };
     }
 
-    // Add the new player to the session
-    session.players.push({ userId: objectUserId, username, pickedNumber });
-    await session.save();
+    const queueIndex = lobby.queue.findIndex((p) =>
+      p.userId.equals(objectUserId),
+    );
+    if (queueIndex !== -1) {
+      lobby.queue.splice(queueIndex, 1);
+      await lobby.save();
+      this.gameGateway.playersInLobby([...lobby.players, ...lobby.queue]);
+      return { message: 'Left queue' };
+    }
 
-    // Emit player join event to notify clients
-    this.gameGateway.playerJoined(session.players); // Pass the updated player list
-
-    return {
-      message: 'Joined session',
-      pickedNumber,
-      sessionEndsAt: session.endsAt,
-    };
+    throw new BadRequestException('User not in this lobby or queue.');
   }
 
   async endSession() {
@@ -142,33 +305,9 @@ export class GameService implements OnModuleInit {
       throw new BadRequestException('No active session.');
     }
 
-    session.isActive = false;
-    session.winningNumber = Math.floor(Math.random() * 10) + 1;
-
-    const winners = session.players.filter(
-      (p) => p.pickedNumber === session.winningNumber,
-    );
-
-    for (const winner of winners) {
-      await this.userModel.findByIdAndUpdate(winner.userId, {
-        $inc: { wins: 1 },
-      });
-    }
-
-    await session.save();
-
-    // Notify clients via WebSocket
-    this.gameGateway.sessionEnded({
-      winningNumber: session.winningNumber,
-      winners,
-      nextSessionStartsAt: this.nextSessionTime as Date,
-    });
-
-    return {
-      winningNumber: session.winningNumber,
-      winners,
-      nextSessionStartsAt: this.nextSessionTime,
-    };
+    // Properly delegate to the single winner resolver
+    const result = await this.revealWinnerAndScheduleNext();
+    return result;
   }
 
   async getActiveSession() {
@@ -179,12 +318,34 @@ export class GameService implements OnModuleInit {
     };
   }
 
+  // async getLeaderboard() {
+  //   const users = await this.userModel
+  //     .find()
+  //     .sort({ 'winHistory.length': -1 })
+  //     .limit(10)
+  //     .select('username winHistory longestWinStreak')
+  //     .lean();
+
+  //   // Map it to a leaderboard format
+  //   return users.map((user) => ({
+  //     _id: user._id,
+  //     username: user.username,
+  //     wins: user.winHistory.length,
+  //     longestStreak: user.longestWinStreak,
+  //   }));
+  // }
+
   async getLeaderboard() {
-    return this.userModel
-      .find()
-      .sort({ wins: -1 })
-      .limit(10)
-      .select('username wins')
-      .lean();
+    return this.userModel.aggregate([
+      {
+        $project: {
+          username: 1,
+          wins: { $size: { $ifNull: ['$winHistory', []] } },
+          longestStreak: { $ifNull: ['$longestWinStreak', 0] },
+        },
+      },
+      { $sort: { wins: -1 } },
+      { $limit: 10 },
+    ]);
   }
 }

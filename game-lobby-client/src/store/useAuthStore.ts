@@ -1,5 +1,9 @@
 import { create } from "zustand";
 
+export type AuthToken = {
+  access_token: string;
+};
+
 type User = {
   userId: string;
   username: string;
@@ -9,10 +13,10 @@ type User = {
 
 type AuthState = {
   user: User | null;
-  token: string | null;
-  login: (user: User, token: string) => void;
+  token: AuthToken | null;
+  login: (user: User, token: AuthToken) => void;
   logout: () => void;
-  setToken: (token: string | null) => void;
+  setToken: (token: AuthToken | null) => void;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({

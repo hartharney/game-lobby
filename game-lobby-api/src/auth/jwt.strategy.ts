@@ -1,27 +1,45 @@
-import { Injectable } from '@nestjs/common';
+import { Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import * as dotenv from 'dotenv';
-import { UnauthorizedException } from '@nestjs/common';
+import { ExtractJwt } from 'passport-jwt';
+import { UserService } from '../user/user.service';
+import { Inject, Logger } from '@nestjs/common';
+import { User } from 'src/user/entities/user.entity';
+import { Types } from 'mongoose';
 
-dotenv.config();
+declare module 'express' {
+  interface Request {
+    user: {
+      userId: Types.ObjectId;
+      email: string;
+    };
+  }
+}
 
-@Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+export class JWTStrategy extends PassportStrategy(Strategy) {
+  logger: Logger;
+
+  constructor(
+    @Inject(UserService)
+    private readonly userService: UserService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET,
     });
+    this.logger = new Logger(JWTStrategy.name);
   }
-
   async validate(payload: any) {
-    console.log('JWT Payload:', payload);
+    const user = await this.userService.findOne(payload.sub);
 
-    if (!payload.sub || !payload.username) {
-      throw new UnauthorizedException('Invalid token payload');
-    }
+    console.log('payload', payload);
 
-    return { userId: payload.sub, username: payload.username };
+    // console.log('JWTStrategy.validate', payload, user);
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      username: payload.username,
+      user,
+    };
   }
 }

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useRegister } from "@/api/mutation";
 import toast from "react-hot-toast";
 import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
+import axios from "axios";
 
 type RegisterPageProps = {
   onClose?: () => void;
@@ -35,7 +36,7 @@ export default function RegisterPage({ onClose }: RegisterPageProps) {
     if (onClose) onClose();
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) {
       toast.error("Passwords do not match!");
@@ -52,12 +53,13 @@ export default function RegisterPage({ onClose }: RegisterPageProps) {
         toast.success("Registration successful!");
         resetFormAndClose();
       },
-      onError: (error: any) => {
-        console.error("Registration error:", error);
+      onError: (error) => {
+        console.error("Login error:", error);
+
         const message =
-          error.response?.data?.message ||
-          error.message ||
+          (axios.isAxiosError(error) ? error.message : error.message) ||
           "Registration failed!";
+
         toast.error(message);
       },
     });

@@ -54,7 +54,6 @@ export class AuthService {
     }
 
     const token = this.generateToken(user);
-
     const { password: _, ...safeUser } = user.toObject();
 
     return {
