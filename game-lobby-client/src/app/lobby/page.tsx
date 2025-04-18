@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import { CountdownTimer } from "@/components/transitions/CountdownTimer";
@@ -10,14 +10,29 @@ import { useActiveSession, useGetUserHistory } from "@/api/query";
 import { useSessionSocket } from "@/hooks/useSessionSocket";
 
 import { motion } from "framer-motion";
-import confetti from "canvas-confetti";
 import toast from "react-hot-toast";
 import { FaUser } from "react-icons/fa";
-import { FaArrowRight, FaHome } from "react-icons/fa";
+import { FaArrowRight, FaHome, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
+import ResultModal from "@/components/modal/ResultModal";
 
-const fireConfetti = () => {
-  confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-};
+const streamUrls = [
+  "https://stream.zeno.fm/3f6bg86spm0uv",
+  "http://ice1.somafm.com/groovesalad-128-mp3",
+  "http://streaming.tdiradio.com:8000/house.mp3",
+  "http://stream.live.vc.bbcmedia.co.uk/bbc_radio3",
+  "https://stream.zeno.fm/f8r5x1t5v0hvv",
+];
+function getRandomStream() {
+  return streamUrls[Math.floor(Math.random() * streamUrls.length)];
+}
+
+const getRemainingSeconds = (timeString: string | null) =>
+  timeString
+    ? Math.max(
+        0,
+        Math.floor((new Date(timeString).getTime() - Date.now()) / 1000)
+      )
+    : 0;
 
 export default function LobbyPage() {
   const router = useRouter();
@@ -27,43 +42,40 @@ export default function LobbyPage() {
   const { data: activeSessionData } = useActiveSession();
   const { data: userHistory } = useGetUserHistory();
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [winningNumber, setWinningNumber] = useState<number | null>(null);
   const [winners, setWinners] = useState<string[]>([]);
   const [username, setUsername] = useState("");
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
-  const [hasStartedGame, setHasStartedGame] = useState(false);
-  const [winningNumber, setWinningNumber] = useState<number | null>(null);
-  const [missedSession, setMissedSession] = useState(false);
   const [timeRemainingInSeconds, setTimeRemainingInSeconds] = useState<
     number | null
   >(null);
-  const [step, setStep] = useState<
-    | "number-select"
-    | "waiting"
-    | "game-play"
-    | "missed"
-    | "result-win"
-    | "result-lose"
-  >("number-select");
+  const [step, setStep] = useState<"number-select" | "waiting">(
+    "number-select"
+  );
+  const [result, setResult] = useState<"result-win" | "result-lose" | null>(
+    null
+  );
+  const [isPlaying, setIsPlaying] = useState(true);
 
-  const nextSessionTime =
-    sessionStartedPayload?.nextSessionStartsAt ||
-    sessionEndedPayload?.nextSessionStartsAt;
+  const [currentStream, setCurrentStream] = useState(getRandomStream());
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const nextSessionTime = sessionEndedPayload?.nextSessionStartsAt ?? null;
+  const sessionStartedTime = sessionStartedPayload?.startedAt ?? null;
+  const sessionEndsAt = sessionStartedPayload?.endsAt ?? null;
 
   const handleNumberSelect = async (num: number) => {
     setSelectedNumber(num);
-
-    const now = new Date();
-    const activeSession = activeSessionData?.activeSession;
-
-    if (activeSession && new Date(activeSession.endsAt) > now) {
-      toast.error("A session is currently active — please wait for it to end.");
-      return;
-    }
-
-    // No active session — safe to join
-    await joinLobby(num);
+    joinLobby(num);
     setStep("waiting");
   };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setStep("number-select");
+  };
+
   const formatTime = (isoString: string | null) => {
     if (!isoString) return "N/A";
     const date = new Date(isoString);
@@ -71,40 +83,72 @@ export default function LobbyPage() {
   };
 
   useEffect(() => {
-    if (step === "result-win") fireConfetti();
-  }, [step]);
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleError = () => {
+      const newStream = getRandomStream();
+      setCurrentStream(newStream);
+      console.warn(`Stream failed, switching to: ${newStream}`);
+    };
+
+    audio.addEventListener("error", handleError);
+    return () => {
+      audio.removeEventListener("error", handleError);
+    };
+  }, []);
 
   useEffect(() => {
-    if (
-      players &&
-      players.length === 0 &&
-      !["number-select", "game-play", "result-win", "result-lose"].includes(
-        step
-      )
-    ) {
-      setStep("number-select");
-      setSelectedNumber(null);
-      setWinningNumber(null);
-      setHasStartedGame(false);
+    if (!nextSessionTime) return;
+
+    setStep("number-select");
+    const remainingSeconds = getRemainingSeconds(nextSessionTime);
+    const startsIn = getRemainingSeconds(sessionStartedTime);
+
+    if (remainingSeconds > 0) {
+      toast(`Next session starts in ${remainingSeconds} seconds!`, {
+        duration: 5000,
+        icon: "⏳",
+        style: {
+          background: "#1a1a2e",
+          color: "#fff",
+        },
+      });
     }
-  }, [players, step]);
+
+    const interval = setInterval(() => {
+      if (remainingSeconds === 0 && sessionStartedTime) {
+        // Only transition to "waiting" if session has actually started
+        setStep("waiting");
+        if (startsIn > 0) {
+          toast(`Session started! Ends in ${startsIn} seconds`, {
+            duration: 5000,
+            icon: "🎉",
+            style: {
+              background: "#1a1a2e",
+              color: "#fff",
+            },
+          });
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [nextSessionTime, sessionStartedTime]);
 
   useEffect(() => {
-    if (!nextSessionTime) {
-      setTimeRemainingInSeconds(null);
-      return;
-    }
+    if (!sessionEndsAt) return;
     const updateRemaining = () => {
       const remaining = Math.max(
         0,
-        Math.floor((new Date(nextSessionTime).getTime() - Date.now()) / 1000)
+        Math.floor((new Date(sessionEndsAt).getTime() - Date.now()) / 1000)
       );
       setTimeRemainingInSeconds(remaining);
     };
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [nextSessionTime]);
+  }, [sessionEndsAt]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -112,11 +156,8 @@ export default function LobbyPage() {
   }, []);
 
   useEffect(() => {
-    if (!username) return;
-
-    if (!players || players.length < 1) return;
+    if (!username || !players || players.length < 1) return;
     const existingPlayer = players.find((p) => p.username === username);
-
     if (existingPlayer && step === "number-select") {
       setSelectedNumber(existingPlayer.pickedNumber);
       setStep("waiting");
@@ -124,50 +165,43 @@ export default function LobbyPage() {
   }, [username, players, step]);
 
   useEffect(() => {
-    if (step === "waiting" && timeRemainingInSeconds === 0 && !hasStartedGame) {
-      setHasStartedGame(true);
-      setStep("game-play");
+    if (!sessionEndedPayload) return;
+    const winner = sessionEndedPayload.winningNumber;
+    setWinningNumber(winner);
+    setWinners(sessionEndedPayload.winners || []);
 
-      setTimeout(() => {
-        if (!sessionEndedPayload) return;
-        const winner = sessionEndedPayload.winningNumber;
-        setWinningNumber(winner);
-        setWinners(sessionEndedPayload.winners || []);
+    if (selectedNumber === winner) setResult("result-win");
+    else setResult("result-lose");
 
-        if (selectedNumber === null) {
-          setMissedSession(true);
-          setStep("missed");
-        } else {
-          if (selectedNumber === winner) setStep("result-win");
-          else setStep("result-lose");
-        }
-      }, 5000);
-    }
-  }, [
-    step,
-    timeRemainingInSeconds,
-    sessionEndedPayload,
-    selectedNumber,
-    hasStartedGame,
-  ]);
-
-  useEffect(() => {
-    if (step === "result-win" || step === "result-lose") {
-      const timer = setTimeout(() => {
-        setSelectedNumber(null);
-        setWinningNumber(null);
-        setStep("number-select");
-        setHasStartedGame(false);
-        setMissedSession(false);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [step]);
+    setIsModalOpen(true);
+    setSelectedNumber(null);
+  }, [sessionEndedPayload]);
 
   const numberBalls = Array.from({ length: 10 }, (_, i) => i + 1);
 
+  // Disable number selection if the session has already started or if time is up
+  const isDisabled =
+    getRemainingSeconds(nextSessionTime as string) < 1 ||
+    nextSessionTime === null;
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#2c2d59] to-[#1a1a2e] text-white flex flex-col relative p-6">
+      <audio
+        ref={audioRef}
+        src={currentStream}
+        autoPlay
+        loop
+        style={{ display: "none" }}
+      />
+
+      {isModalOpen && step && (
+        <ResultModal
+          step={result}
+          winningNumber={winningNumber as number}
+          winners={winners}
+          onClose={handleCloseModal}
+        />
+      )}
       <div
         onClick={(e) => e.stopPropagation()}
         className="flex justify-between gap-3 mb-4 relative z-50"
@@ -185,6 +219,42 @@ export default function LobbyPage() {
         >
           Visit Leaderboard
           <FaArrowRight />
+        </button>
+      </div>
+
+      <div className="fixed bottom-4 right-4 z-50">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            const audio = audioRef.current;
+            if (!audio) return;
+
+            if (audio.paused) {
+              audio.play();
+              setIsPlaying(true);
+            } else {
+              audio.pause();
+              setIsPlaying(false);
+            }
+          }}
+          className="bg-pink-600 text-white px-4 py-2 rounded-lg shadow hover:bg-pink-700 transition flex items-center gap-2"
+        >
+          {/* Sound Icon */}
+          {isPlaying ? (
+            <FaVolumeUp className="text-xl" />
+          ) : (
+            <FaVolumeMute className="text-xl" />
+          )}
+
+          <motion.div
+            animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+            className="w-3 h-3 bg-white rounded-full"
+            style={{
+              marginLeft: "8px",
+              display: isPlaying ? "inline-block" : "none",
+            }}
+          />
         </button>
       </div>
 
@@ -219,13 +289,10 @@ export default function LobbyPage() {
             {!sessionStartedPayload && !sessionEndedPayload ? (
               <>
                 <h1 className="text-2xl font-bold mb-4">
-                  Waiting for the admin to start a new session ⏳
+                  No current running sessions ⏳
                 </h1>
                 <p className="text-sm text-gray-300 mb-4">
                   Please hold on — a new session will begin shortly.
-                </p>
-                <p className="text-sm text-gray-300 mb-4">
-                  Refresh if session does not start in 5 seconds.
                 </p>
               </>
             ) : activeSessionData?.activeSession ? (
@@ -236,8 +303,10 @@ export default function LobbyPage() {
                 <p className="text-sm text-gray-300 mb-4">
                   You can join the next session in:
                 </p>
-                {timeRemainingInSeconds !== null && (
-                  <CountdownTimer duration={timeRemainingInSeconds} />
+                {nextSessionTime !== null && (
+                  <CountdownTimer
+                    duration={getRemainingSeconds(nextSessionTime as string)}
+                  />
                 )}
               </>
             ) : (
@@ -248,17 +317,29 @@ export default function LobbyPage() {
                 <p className="text-sm text-gray-300 mb-4">
                   {"Once selected, you'll be added to the lobby."}
                 </p>
-                {timeRemainingInSeconds !== null && (
-                  <CountdownTimer duration={timeRemainingInSeconds} />
+                <p className="text-sm text-gray-300 mb-4">
+                  {"Select a number between 1 and 10. Game starts soon"}
+                </p>
+                {nextSessionTime !== null && (
+                  <CountdownTimer
+                    duration={getRemainingSeconds(nextSessionTime as string)}
+                  />
                 )}
+                {/* {timeRemainingInSeconds !== null && (
+                  <CountdownTimer duration={timeRemainingInSeconds} />
+                )} */}
                 <div className="flex gap-4 mt-6 flex-wrap z-10">
                   {numberBalls.map((num) => (
                     <motion.div
                       key={num}
                       whileHover={{ scale: 1.2 }}
                       whileTap={{ scale: 0.9 }}
-                      onClick={() => !isPending && handleNumberSelect(num)}
-                      className="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg cursor-pointer"
+                      onClick={() =>
+                        !isPending && !isDisabled && handleNumberSelect(num)
+                      }
+                      className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-lg cursor-pointer ${
+                        isDisabled ? "cursor-not-allowed opacity-50" : ""
+                      }`}
                       style={{ backgroundColor: `hsl(${num * 36}, 70%, 50%)` }}
                     >
                       {num}
@@ -275,31 +356,21 @@ export default function LobbyPage() {
             <h1 className="text-2xl font-bold mb-4">
               {" Welcome to the Lobby, It's about to get real! 🎉"}
             </h1>
-            <p className="text-sm text-gray-300 mb-4">
-              {"You'll be auto-joined when the session starts."}
-            </p>
-            <div className="mt-10 text-center z-10 space-y-3">
-              <p className="text-xl">
-                ✅ {username} joined with number {selectedNumber}!
-              </p>
-              {timeRemainingInSeconds ? (
-                <>
-                  <p className="text-sm">Session starts in</p>
-                  <CountdownTimer duration={timeRemainingInSeconds} />
-                </>
-              ) : (
-                <p className="text-sm">Waiting for the next session...</p>
-              )}
-            </div>
-          </>
-        )}
 
-        {step === "game-play" && (
-          <>
             <h1 className="text-3xl font-bold mb-4">Game in progress! 🎲</h1>
             <p className="text-gray-300 mb-4">
               Waiting for the winning number...
             </p>
+
+            <div className="mt-4 mb-4 text-center z-10 space-y-3">
+              {timeRemainingInSeconds && (
+                <>
+                  <p className="text-sm">Session ends in</p>
+                  <CountdownTimer duration={timeRemainingInSeconds} />
+                </>
+              )}
+            </div>
+
             <motion.div
               className="grid grid-cols-5 gap-4"
               initial={{ opacity: 0 }}
@@ -323,83 +394,19 @@ export default function LobbyPage() {
                 </motion.div>
               ))}
             </motion.div>
-          </>
-        )}
-        {missedSession && (
-          <>
-            <h1 className="text-2xl font-bold mb-4 text-red-400">
-              You missed the last session 😔
-            </h1>
-            <p className="text-lg mt-2">
-              Winning Number was:{" "}
-              <span className="font-bold text-green-400">{winningNumber}</span>
-            </p>
-            <div className="mt-4">
-              <h2 className="text-xl">🏆 Winners:</h2>
-              <ul className="mt-2 space-y-1">
-                {winners.map((winner, index) => (
-                  <li key={index} className="text-white">
-                    - {winner}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <p className="text-sm text-gray-300 mt-6">
-              Next session starts in:
-            </p>
-            {timeRemainingInSeconds !== null && (
-              <CountdownTimer duration={timeRemainingInSeconds} />
-            )}
-          </>
-        )}
 
-        {step === "result-win" && (
-          <div className="fixed inset-0 flex flex-col items-center justify-center bg-black/50 z-50">
-            <h1 className="text-4xl text-white font-bold">🎉 You won! 🎉</h1>
-            <p className="text-lg mt-2">
-              Winning Number:{" "}
-              <span className="font-bold text-green-400">{winningNumber}</span>
-            </p>
-            <div className="mt-4">
-              <h2 className="text-xl">🏆 Winners:</h2>
-              <ul className="mt-2 space-y-1">
-                {winners.map((winner, index) => (
-                  <li key={index} className="text-white">
-                    - {winner}
-                  </li>
-                ))}
-              </ul>
+            <div>
+              {selectedNumber !== null ? (
+                <>
+                  <p className="text-xl">
+                    ✅ {username} joined with number {selectedNumber}!
+                  </p>
+                </>
+              ) : (
+                "You missed joining this session — please wait for the next one."
+              )}
             </div>
-          </div>
-        )}
-
-        {step === "result-lose" && (
-          <div className="fixed inset-0 flex flex-col items-center justify-center bg-black/50 z-50">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            >
-              <p className="text-5xl">😔</p>
-              <h1 className="text-3xl text-white mt-4">
-                Better luck next time!
-              </h1>
-              <p className="text-lg mt-2">
-                Winning Number:{" "}
-                <span className="font-bold text-red-400">{winningNumber}</span>
-              </p>
-              <div className="mt-4">
-                <h2 className="text-xl text-white">🏆 Winners:</h2>
-                <ul className="mt-2 space-y-1">
-                  {winners.map((winner, index) => (
-                    <li key={index} className="text-white">
-                      - {winner}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </motion.div>
-          </div>
+          </>
         )}
 
         <div className="flex flex-col justify-center items-start mt-10 p-2">

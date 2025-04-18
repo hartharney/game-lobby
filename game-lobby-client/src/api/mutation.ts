@@ -64,6 +64,7 @@ export const useStartSession = () => {
 // --- JOIN LOBBY ---
 export const useJoinLobby = () => {
   const queryClient = useQueryClient();
+
   return useMutation<unknown, Error, number>({
     mutationFn: async (selectedNumber) => {
       try {
@@ -73,9 +74,18 @@ export const useJoinLobby = () => {
           throw new Error("Authorization token is missing!");
         }
 
-        const res = await api.post("/game/join-lobby", {
-          pickedNumber: selectedNumber,
-        });
+        const res = await api.post(
+          "/game/join-lobby",
+          {
+            pickedNumber: selectedNumber,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
         return res.data;
       } catch (error) {
         const serverMessage = (error as ApiError).response?.data?.message
@@ -83,11 +93,22 @@ export const useJoinLobby = () => {
         throw new Error(serverMessage || "Failed to join lobby!");
       }
     },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activeLobby"] });
     },
+
     onError: (error) => {
-      toast.error(error.message || "Failed to join lobby!");
+      // Custom error handling based on message
+      if (
+        error.message.includes("Authorization") ||
+        error.message.includes("token") ||
+        error.message.includes("Unauthorized")
+      ) {
+        toast.error("Authorization failed, please log in again.");
+      } else {
+        toast.error(error.message || "Failed to join lobby!");
+      }
     },
   });
 };

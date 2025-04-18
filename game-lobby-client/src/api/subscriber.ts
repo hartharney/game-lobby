@@ -109,12 +109,12 @@ export const useSocketStore = create<SocketState>((set) => ({
 
     socket.on("gameState", (state) => {
       set({
-        sessionStartedPayload: state.sessionStartedPayload || null,
-        sessionEndedPayload: state.sessionEndedPayload || null,
-        nextSessionStartsAt: state.nextSessionStartsAt
+        sessionStartedPayload: state?.sessionStartedPayload || null,
+        sessionEndedPayload: state?.sessionEndedPayload || null,
+        nextSessionStartsAt: state?.nextSessionStartsAt
           ? new Date(state.nextSessionStartsAt)
           : null,
-        players: state.players || null,
+        players: state?.players || null,
       });
     });
 
