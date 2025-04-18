@@ -4,6 +4,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 import * as dotenv from 'dotenv';
+import { RequestInterceptor } from './common/interceptors/request.interceptor';
 dotenv.config();
 
 const port = process.env.PORT || 5000;
@@ -25,6 +26,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  app.useGlobalInterceptors(new RequestInterceptor());
 
   app.useGlobalPipes(
     new ValidationPipe({

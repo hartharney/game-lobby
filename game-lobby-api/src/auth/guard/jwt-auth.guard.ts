@@ -2,6 +2,7 @@ import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorator/isPublic.decorator';
+import { Request, Response } from 'express';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -19,10 +20,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     const http = context.switchToHttp();
-    const req = http.getRequest();
+    const req = http.getRequest<Request>();
+    const res = http.getResponse<Response>();
 
     console.log('JwtAuthGuard.canActivate...', req.headers);
-    const res = http.getResponse();
     req.res = res;
 
     const isAuthenticated = await super.canActivate(context);

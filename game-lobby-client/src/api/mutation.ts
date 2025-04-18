@@ -2,41 +2,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import toast from "react-hot-toast";
-import { AxiosError } from "axios";
-
-// --- TYPES ---
-type ApiError = AxiosError<{
-  message?: { message?: string };
-}>;
-
-type AuthToken = {
-  access_token: string;
-};
-
-type User = {
-  _id: string;
-  username: string;
-  email: string;
-  winHistory: string[];
-};
-
-type LoginResponse = {
-  data: {
-    token: AuthToken;
-    user: User;
-  };
-};
-
-type RegisterPayload = {
-  username: string;
-  email: string;
-  password: string;
-};
-
-type LoginPayload = {
-  username: string;
-  password: string;
-};
+import {
+  ApiError,
+  LoginPayload,
+  LoginResponse,
+  RegisterPayload,
+} from "@/types";
 
 // --- START SESSION ---
 export const useStartSession = () => {
@@ -99,7 +70,6 @@ export const useJoinLobby = () => {
     },
 
     onError: (error) => {
-      // Custom error handling based on message
       if (
         error.message.includes("Authorization") ||
         error.message.includes("token") ||
@@ -109,6 +79,10 @@ export const useJoinLobby = () => {
       } else {
         toast.error(error.message || "Failed to join lobby!");
       }
+
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/";
     },
   });
 };

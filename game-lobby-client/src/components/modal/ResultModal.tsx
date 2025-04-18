@@ -1,11 +1,12 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
+import { Winner } from "@/types";
 
 interface ResultModalProps {
   step: "result-win" | "result-lose" | null;
   winningNumber: number;
-  winners: string[];
+  winners: Winner[];
   onClose: () => void;
 }
 const fireConfetti = () => {
@@ -55,7 +56,7 @@ const ResultModal: React.FC<ResultModalProps> = ({
               <ul className="mt-2 space-y-1">
                 {winners.map((winner, index) => (
                   <li key={index} className="text-black">
-                    - {winner}
+                    - {winner.username}
                   </li>
                 ))}
               </ul>

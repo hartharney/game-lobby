@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { FaUser } from "react-icons/fa";
 import { FaArrowRight, FaHome, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 import ResultModal from "@/components/modal/ResultModal";
+import { Winner } from "@/types";
 
 const streamUrls = [
   "https://stream.zeno.fm/3f6bg86spm0uv",
@@ -44,7 +45,7 @@ export default function LobbyPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [winningNumber, setWinningNumber] = useState<number | null>(null);
-  const [winners, setWinners] = useState<string[]>([]);
+  const [winners, setWinners] = useState<Winner[] | null>([]);
   const [username, setUsername] = useState("");
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null);
   const [timeRemainingInSeconds, setTimeRemainingInSeconds] = useState<
@@ -198,7 +199,7 @@ export default function LobbyPage() {
         <ResultModal
           step={result}
           winningNumber={winningNumber as number}
-          winners={winners}
+          winners={winners as Winner[]}
           onClose={handleCloseModal}
         />
       )}
@@ -268,12 +269,18 @@ export default function LobbyPage() {
             animate={{ x: ["100%", "-100%"] }}
             transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
           >
-            Registered Players 👥 {players?.length} | ⏳ Next game starts at{" "}
-            {formatTime(nextSessionTime as string)} | User Stats:{" "}
+            👥 Players in session {players?.length} | ⏳ Next game starts at{" "}
+            {formatTime(nextSessionTime as string)} | Your Stats:{" "}
             {userHistory
-              ? `Wins: ${userHistory.winHistory?.length}, Losses: ${userHistory.winHistory?.length}`
+              ? `Wins: ${userHistory?.winHistory?.length}, Losses: ${
+                  userHistory?.totalGamesPlayed -
+                  userHistory?.winHistory?.length
+                }, Total Games: ${
+                  userHistory?.totalGamesPlayed
+                }, Current Streak: ${
+                  userHistory?.streak
+                }, Longest Winning Streak: ${userHistory?.longestWinStreak}`
               : "Loading..."}{" "}
-            | Total Games played : {userHistory?.totalGamesPlayed}
           </motion.div>
         </motion.div>
       </div>
@@ -410,7 +417,12 @@ export default function LobbyPage() {
         )}
 
         <div className="flex flex-col justify-center items-start mt-10 p-2">
-          <h1 className=""> Players waiting in Lobby: </h1>
+          {step == "number-select" && (
+            <h1 className=""> Players waiting in Lobby: </h1>
+          )}
+
+          {step == "waiting" && <h1 className=""> Players in Lobby: </h1>}
+
           <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-4 z-10">
             {players && players.length > 0 ? (
               players.map((player, index) => (
@@ -427,7 +439,7 @@ export default function LobbyPage() {
               ))
             ) : (
               <div className="p-3 bg-white text-black rounded-lg flex items-center gap-2">
-                <span>No players in the lobby yet.</span>
+                <span>No players joined.</span>
               </div>
             )}
           </div>

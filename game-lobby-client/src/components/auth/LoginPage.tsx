@@ -3,7 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useLogin } from "@/api/mutation";
 import { Loader, Eye, EyeOff } from "lucide-react";
-import { FcGoogle } from "react-icons/fc";
+// import { FcGoogle } from "react-icons/fc";
 import toast from "react-hot-toast";
 import axios from "axios";
 
@@ -41,9 +41,9 @@ export default function LoginPage({ onClose }: LoginPageProps) {
     if (onClose) onClose();
   };
 
-  const handleGoogleLogin = () => {
-    toast("Redirecting to Google...");
-  };
+  // const handleGoogleLogin = () => {
+  //   toast("Redirecting to Google...");
+  // };
 
   return (
     <div className="space-y-6">
@@ -101,20 +101,20 @@ export default function LoginPage({ onClose }: LoginPageProps) {
       </form>
 
       {/* Divider */}
-      <div className="flex items-center gap-4">
+      {/* <div className="flex items-center gap-4">
         <div className="flex-1 h-px bg-gray-300"></div>
         <span className="text-gray-400 text-sm">or</span>
         <div className="flex-1 h-px bg-gray-300"></div>
-      </div>
+      </div> */}
 
       {/* Google Button */}
-      <button
+      {/* <button
         onClick={handleGoogleLogin}
         className="flex items-center justify-center gap-3 border-2 border-gray-300 py-3 px-4 rounded-lg w-full hover:bg-gray-50 transition"
       >
         <FcGoogle className="text-xl" />
         <span className="text-gray-700 font-medium">Continue with Google</span>
-      </button>
+      </button> */}
     </div>
   );
 }

@@ -49,9 +49,6 @@ export default function LandingPage() {
           <Link href="/leaderboard" className="hover:text-purple-300">
             Leaderboard
           </Link>
-          <Link href="#" className="hover:text-purple-300">
-            News
-          </Link>
         </div>
 
         {/* Hamburger Button */}
@@ -69,9 +66,6 @@ export default function LandingPage() {
           <Link href="/leaderboard" className="hover:text-purple-300 text-lg">
             Leaderboard
           </Link>
-          <Link href="#" className="hover:text-purple-300 text-lg">
-            News
-          </Link>
         </div>
       )}
 
@@ -87,10 +81,8 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-lg text-gray-300">
-            Dive into the mystical world of Harneys, a place where adventure,
-            danger, and destiny collide. Join Ori on a quest to save the realm,
-            discover ancient secrets, and prove your courage. The game is about
-            to begin — will you rise to the challenge?
+            Dive into the mystical world of Harneys, will you rise to the
+            challenge?
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start z-100">

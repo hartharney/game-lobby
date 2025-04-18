@@ -1,36 +1,11 @@
 import { create } from "zustand";
-import { io, Socket } from "socket.io-client";
-
-type SessionStartedPayload = {
-  endsAt: string;
-  startedAt: string;
-  nextSessionStartsAt: string;
-};
-
-type SessionEndedPayload = {
-  winningNumber: number;
-  winners: string[];
-  nextSessionStartsAt: string;
-};
-
-type PlayerJoinedPayload = {
-  players: {
-    userId: string;
-    username: string;
-    pickedNumber: number;
-  }[];
-};
-
-type SocketState = {
-  socket: Socket | null;
-  sessionStartedPayload: SessionStartedPayload | null;
-  sessionEndedPayload: SessionEndedPayload | null;
-  nextSessionStartsAt: Date | string | null;
-  players: PlayerJoinedPayload["players"] | null;
-  connect: () => void;
-  disconnect: () => void;
-  syncGameState: () => void;
-};
+import { io } from "socket.io-client";
+import {
+  PlayerJoinedPayload,
+  SessionEndedPayload,
+  SessionStartedPayload,
+  SocketState,
+} from "@/types";
 
 export const useSocketStore = create<SocketState>((set) => ({
   socket: null,
@@ -69,19 +44,6 @@ export const useSocketStore = create<SocketState>((set) => ({
     });
 
     socket.on("sessionStarted", (payload: SessionStartedPayload) => {
-      // console.log("🎉 Session started!", payload);
-
-      // const now = Date.now();
-      // const endsAt = new Date(payload.endsAt).getTime();
-      // const startedAt = new Date(payload.startedAt).getTime();
-
-      // const remaining = endsAt - now;
-      // const totalDuration = endsAt - startedAt;
-      // const progress = (totalDuration - remaining) / totalDuration;
-
-      // console.log(`⏳ Remaining time: ${remaining}ms`);
-      // console.log(`📊 Progress: ${(progress * 100).toFixed(1)}%`);
-
       set({ sessionStartedPayload: payload });
     });
 

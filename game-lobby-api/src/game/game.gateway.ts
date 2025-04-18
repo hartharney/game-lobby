@@ -6,7 +6,7 @@ import {
 import { Types } from 'mongoose';
 import { GameService } from './game.service';
 import { Server, Socket } from 'socket.io';
-import { forwardRef, Inject } from '@nestjs/common';
+import { forwardRef, Inject, Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
@@ -18,6 +18,8 @@ import { forwardRef, Inject } from '@nestjs/common';
 export class GameGateway implements OnGatewayConnection {
   @WebSocketServer()
   server: Server;
+
+  private readonly logger = new Logger(GameGateway.name);
 
   players: {
     userId: Types.ObjectId;
@@ -32,7 +34,7 @@ export class GameGateway implements OnGatewayConnection {
 
   // When a client connects
   handleConnection(client: Socket) {
-    console.log(`🎮 Client connected: ${client.id}`);
+    this.logger.log(`🎮 Client connected: ${client.id}`);
 
     client.emit('connectionConfirmed', {
       message: 'Welcome to the game lobby!',
@@ -47,7 +49,14 @@ export class GameGateway implements OnGatewayConnection {
       client.emit('gameState', state);
     });
 
-    this.gameService.syncStateToClient(client);
+    this.gameService
+      .syncStateToClient(client)
+      .then((state) => {
+        client.emit('gameState', state);
+      })
+      .catch((error) => {
+        this.logger.error('Error syncing state to client:', error);
+      });
   }
 
   // Notify all clients when a session starts
@@ -56,7 +65,7 @@ export class GameGateway implements OnGatewayConnection {
     startedAt: Date;
     nextSessionStartsAt: Date;
   }) {
-    console.log('🚀 Session started!', payload);
+    this.logger.log('🚀 Session started!', payload);
     this.server.emit('sessionStarted', payload);
   }
 
@@ -66,16 +75,16 @@ export class GameGateway implements OnGatewayConnection {
     winners: any[];
     nextSessionStartsAt: Date;
   }) {
-    console.log('🎉 Session ended!', payload);
+    this.logger.log('🎉 Session ended!', payload);
     this.server.emit('sessionEnded', payload);
 
     // Clear lobby state after session
-    this.players = [];
+    // this.players = [];
   }
 
   // Notify all clients when no session runs (optional)
   sessionSkipped(payload: { nextSessionStartsAt: Date }) {
-    console.log('⏭️ Session skipped — no players available.', payload);
+    this.logger.log('⏭️ Session skipped — no players available.', payload);
     this.server.emit('sessionSkipped', payload);
   }
 

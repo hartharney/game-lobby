@@ -32,6 +32,9 @@ export class AuthService {
       email,
       password: hashedPassword,
       winHistory: [],
+      totalGamesPlayed: 0,
+      streak: 0,
+      longestWinStreak: 0,
     });
 
     await user.save();
@@ -47,18 +50,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid username.');
     }
 
-    // Check if the password is correct
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid password.');
     }
 
     const token = this.generateToken(user);
-    const { password: _, ...safeUser } = user.toObject();
+    // I will exclude it from the schema
+    // const { password: _, ...safeUser } = user.toObject();
 
     return {
       token,
-      user: safeUser,
+      user,
     };
   }
 

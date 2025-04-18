@@ -22,6 +22,12 @@ export class GameController {
     return this.gameService.startSession();
   }
 
+  // End the current session
+  @Post('end-session')
+  endSession() {
+    return this.gameService.endSession();
+  }
+
   // Get active session
   @Get('active-session')
   getActiveSession() {
@@ -50,12 +56,7 @@ export class GameController {
     return this.gameService.leaveLobby(req.user.userId);
   }
 
-  // End the current session
-  @Post('end-session')
-  endSession() {
-    return this.gameService.endSession();
-  }
-
+  // Get leaderboard
   @Get('leaderboard')
   getLeaderboard() {
     return this.gameService.getLeaderboard();
