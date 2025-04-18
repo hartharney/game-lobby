@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: ./game-lobby-api
+      dockerfile: Dockerfile.prod
+    container_name: game-lobby-api
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    restart: always
+
+  client:
+    build:
+      context: ./game-lobby-client
+      dockerfile: Dockerfile.prod
+    container_name: game-lobby-client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: always

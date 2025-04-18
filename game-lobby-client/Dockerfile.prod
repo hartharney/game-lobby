@@ -1,0 +1,35 @@
+# Use official Node image for build
+FROM node:alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the source code
+COPY . .
+
+# Build the project for production
+RUN npm run build
+
+# Final image with only production artifacts
+FROM node:alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install only production dependencies
+COPY package*.json ./
+RUN npm install --only=production
+
+# Copy the build folder from the builder stage
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+# Expose the required port
+EXPOSE 3000
+
+# Start the production application
+CMD ["npm", "run", "start"]
