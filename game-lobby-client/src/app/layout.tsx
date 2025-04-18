@@ -14,7 +14,12 @@ import { Toaster } from "react-hot-toast";
 //   subsets: ["latin"],
 // });
 
+export const viewport = {
+  themeColor: "#0f172a",
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://harneys-game.com"),
   title: "Harneys Game Lobby",
   description:
     "Join the Harneys Game Lobby — a fun, multi-user game where players guess a winning number in real time!",
@@ -55,7 +60,6 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-  themeColor: "#0f172a",
   // manifest: "/site.webmanifest",
 };
 
