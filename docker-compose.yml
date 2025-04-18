@@ -1,27 +1,30 @@
 services:
   api:
-    build: .
+    build:
+      context: ./game-lobby-api
     container_name: game-lobby-api
     ports:
       - "5000:5000"
     volumes:
-      - .:/app
+      - ./game-lobby-api:/app
       - /app/node_modules
     env_file:
       - .env
-    depends_on:
-      - mongo
+    # depends_on:
+    #   - mongo
 
-  mongo:
-    image: mongo:6
-    container_name: game-lobby-db
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
+  # Uncomment the following lines to use MongoDB locally
+  # mongo:
+  #   image: mongo:6
+  #   container_name: game-lobby-db
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongo-data:/data/db
 
   client:
-    build: ./game-lobby-client
+    build:
+      context: ./game-lobby-client
     container_name: game-lobby-client
     ports:
       - "3000:3000"
@@ -30,6 +33,5 @@ services:
       - /app/node_modules
     depends_on:
       - api
-
-volumes:
-  mongo-data:
+# volumes:
+#   mongo-data:

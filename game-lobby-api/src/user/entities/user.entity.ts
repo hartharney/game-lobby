@@ -16,6 +16,22 @@ export class User {
 
   @Prop({ default: [] })
   winHistory: { date: Date; score: number }[];
+
+  @Prop({ default: 0 })
+  totalGamesPlayed: number;
+
+  @Prop({ default: 0 })
+  streak: number;
+
+  @Prop({ default: 0 })
+  longestWinStreak: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.set('toJSON', {
+  transform: function (doc, ret) {
+    delete ret.password;
+    return ret;
+  },
+});

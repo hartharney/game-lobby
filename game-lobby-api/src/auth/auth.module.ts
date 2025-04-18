@@ -3,12 +3,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { JwtStrategy } from './jwt.strategy';
 import { UserModule } from '../user/user.module';
 import * as dotenv from 'dotenv';
+import { JWTStrategy } from './jwt.strategy';
+import { UserService } from 'src/user/user.service';
 dotenv.config();
 
-console.log('JWT_SECRET', process.env.JWT_SECRET);
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set');
 }
@@ -23,7 +23,7 @@ if (!process.env.JWT_SECRET) {
     UserModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JWTStrategy, UserService],
   exports: [AuthService],
 })
 export class AuthModule {}

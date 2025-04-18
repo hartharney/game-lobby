@@ -1,103 +1,130 @@
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
 import Image from "next/image";
+import { FiMenu, FiX } from "react-icons/fi";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import AuthModal from "@/components/modal/AuthModal";
 
-export default function Home() {
+export default function LandingPage() {
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [path, setPath] = useState("");
+
+  const openModal = (path: string) => {
+    setPath(path);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setPath("");
+    setModalOpen(false);
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen bg-gradient-to-br from-[#2c2d59] to-[#1a1a2e] text-white flex flex-col">
+      {/* Background Effects */}
+      <div className="absolute inset-0">
+        <div className="absolute w-72 h-72 bg-purple-600 opacity-30 rounded-full blur-3xl top-[-50px] left-[-50px]"></div>
+        <div className="absolute w-72 h-72 bg-pink-500 opacity-20 rounded-full blur-3xl bottom-[-50px] right-[-50px]"></div>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Navigation */}
+      <nav className="flex justify-between items-center p-6 max-w-7xl w-full mx-auto relative">
+        <div className="w-32 h-auto">
+          <Image
+            src="/images/logo.png"
+            alt="Harneys game logo"
+            width={128}
+            height={64}
+            className="w-full h-auto object-contain"
+            priority
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        <div className="hidden md:flex gap-6">
+          <Link href="/leaderboard" className="hover:text-purple-300">
+            Leaderboard
+          </Link>
+        </div>
+
+        {/* Hamburger Button */}
+        <button
+          className="md:hidden text-2xl cursor-pointer z-50"
+          onClick={() => setMenuOpen((prev) => !prev)}
+        >
+          {menuOpen ? <FiX /> : <FiMenu />}
+        </button>
+      </nav>
+
+      {/* Mobile Menu */}
+      {menuOpen && (
+        <div className="absolute top-20 left-0 w-full bg-[#2c2d59] flex flex-col gap-6 items-center py-6 md:hidden z-50">
+          <Link href="/leaderboard" className="hover:text-purple-300 text-lg">
+            Leaderboard
+          </Link>
+        </div>
+      )}
+
+      {/* Hero Section */}
+      <div className="flex-1 flex flex-col md:flex-row items-center justify-between gap-12 px-6 max-w-7xl w-full mx-auto">
+        {/* Left Section */}
+        <div className="max-w-xl space-y-6 text-center md:text-left">
+          <h1 className="text-5xl md:text-6xl font-bold leading-tight drop-shadow-[0_0_10px_rgba(192,132,252,0.8)]">
+            EMBARK ON AN EPIC JOURNEY <br />
+            <span className="text-purple-400 drop-shadow-[0_0_20px_rgba(192,132,252,0.9)]">
+              WHERE LEGENDS ARE MADE
+            </span>
+          </h1>
+
+          <p className="text-lg text-gray-300">
+            Dive into the mystical world of Harneys, will you rise to the
+            challenge?
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start z-100">
+            <button
+              className="px-6 py-3 bg-white text-black rounded-[10px] font-semibold w-[200px] cursor-pointer z-200"
+              onClick={() => openModal("/register")}
+            >
+              Join the Adventure
+            </button>
+
+            <button
+              className="px-6 py-3 border border-white rounded-[10px] font-semibold w-[200px] cursor-pointer z-200"
+              onClick={() => router.push("/lobby")}
+            >
+              Start Playing
+            </button>
+          </div>
+        </div>
+
+        {/* Right Section */}
+        <motion.div
+          initial={{ x: 0, y: 0 }}
+          animate={{
+            x: [0, 20, 40, 20, 0, -20, -40, -20, 0],
+            y: [0, 20, 0, -20, -40, -20, 0, 20, 0],
+          }}
+          transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+          className="w-full max-w-md"
         >
           <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+            src="/images/surfing_harney.png"
+            alt="Harneys Character"
+            width={500}
+            height={500}
+            className="w-full h-auto object-contain"
+            priority
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+        </motion.div>
+      </div>
+
+      {/* Show Modal if open */}
+      {modalOpen && <AuthModal closeModal={closeModal} path={path} />}
+    </main>
   );
 }

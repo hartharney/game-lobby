@@ -5,6 +5,7 @@ import {
   UseGuards,
   Request,
   BadRequestException,
+  Body,
 } from '@nestjs/common';
 import { GameService } from './game.service';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
@@ -14,23 +15,11 @@ import { JwtRequest } from '../auth/interfaces/jwt-request.interface';
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
-  // Start a new session (for demo/dev only — ideally protected)
+  // Start a new session
+  @UseGuards(JwtAuthGuard)
   @Post('start-session')
   startSession() {
-    return this.gameService.startSession(20);
-  }
-
-  // Get active session
-  @Get('active-session')
-  getActiveSession() {
-    return this.gameService.getActiveSession();
-  }
-
-  // Join a session
-  @UseGuards(JwtAuthGuard)
-  @Post('join')
-  join(@Request() req: JwtRequest) {
-    return this.gameService.joinSession(req.user.userId, req.user.username);
+    return this.gameService.startSession();
   }
 
   // End the current session
@@ -39,6 +28,35 @@ export class GameController {
     return this.gameService.endSession();
   }
 
+  // Get active session
+  @Get('active-session')
+  getActiveSession() {
+    return this.gameService.getActiveSession();
+  }
+
+  // Join Lobby
+  @UseGuards(JwtAuthGuard)
+  @Post('join-lobby')
+  joinLobby(
+    @Request() req: JwtRequest,
+    @Body() body: { pickedNumber: string },
+  ) {
+    const { userId, username } = req.user;
+    const { pickedNumber } = body;
+    if (!pickedNumber) {
+      throw new BadRequestException('pickedNumber is required.');
+    }
+    return this.gameService.joinLobby(userId, username, +pickedNumber);
+  }
+
+  // Leave a lobby
+  @UseGuards(JwtAuthGuard)
+  @Post('leave-lobby')
+  leaveLobby(@Request() req: JwtRequest) {
+    return this.gameService.leaveLobby(req.user.userId);
+  }
+
+  // Get leaderboard
   @Get('leaderboard')
   getLeaderboard() {
     return this.gameService.getLeaderboard();
