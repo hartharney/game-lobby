@@ -167,9 +167,9 @@ export default function LobbyPage() {
 
   useEffect(() => {
     if (players && players?.length > 0) return;
-    const winner = sessionEndedPayload.winningNumber;
-    setWinningNumber(winner);
-    setWinners(sessionEndedPayload.winners || []);
+    const winner = sessionEndedPayload?.winningNumber;
+    setWinningNumber(winner as number);
+    setWinners(sessionEndedPayload?.winners || []);
 
     if (selectedNumber === winner) setResult("result-win");
     else setResult("result-lose");
