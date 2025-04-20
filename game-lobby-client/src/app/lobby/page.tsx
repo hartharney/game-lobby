@@ -166,7 +166,7 @@ export default function LobbyPage() {
   }, [username, players, step]);
 
   useEffect(() => {
-    if (!sessionEndedPayload) return;
+    if (players && players?.length > 0) return;
     const winner = sessionEndedPayload.winningNumber;
     setWinningNumber(winner);
     setWinners(sessionEndedPayload.winners || []);
@@ -176,7 +176,7 @@ export default function LobbyPage() {
 
     setIsModalOpen(true);
     setSelectedNumber(null);
-  }, [sessionEndedPayload, selectedNumber]);
+  }, [players, sessionEndedPayload, selectedNumber]);
 
   const numberBalls = Array.from({ length: 10 }, (_, i) => i + 1);
 
@@ -195,7 +195,7 @@ export default function LobbyPage() {
         style={{ display: "none" }}
       />
 
-      {isModalOpen && step && (
+      {isModalOpen && step == "number-select"  && (
         <ResultModal
           step={result}
           winningNumber={winningNumber as number}
