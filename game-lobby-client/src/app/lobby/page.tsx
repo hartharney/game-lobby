@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CountdownTimer } from "../../components/transitions/CountdownTimer";
 
 import { useJoinLobby } from "../../api/mutation";
-import { useActiveSession, useGetUserHistory } from "@/api/query";
+import { useActiveSession, useGetUserHistory } from "../../api/query";
 import { useSessionSocket } from "../../hooks/useSessionSocket";
 
 import { motion } from "framer-motion";
