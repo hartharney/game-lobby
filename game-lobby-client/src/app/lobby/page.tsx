@@ -191,7 +191,7 @@ export default function LobbyPage() {
     nextSessionTime === null;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#2c2d59] to-[#1a1a2e] text-white flex flex-col relative p-6">
+    <main className="min-h-screen overflow-x-hidden overflow-y-hidden bg-gradient-to-br from-[#2c2d59] to-[#1a1a2e] text-white flex flex-col relative p-6">
       <audio
         ref={audioRef}
         src={currentStream}
@@ -270,7 +270,7 @@ export default function LobbyPage() {
           style={{ background: "linear-gradient(90deg, #2c2d59, #1a1a2e)" }}
         >
           <motion.div
-            className="flex items-center justify-start"
+            className="flex items-center justify-start w-full overflow-hidden"
             animate={{ x: ["100%", "-100%"] }}
             transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
           >
@@ -295,7 +295,7 @@ export default function LobbyPage() {
         <div className="absolute w-72 h-72 bg-pink-500 opacity-20 rounded-full blur-3xl bottom-[-50px] right-[-50px]"></div>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="flex flex-1 flex-col items-center justify-center min-h-[calc(100vh-300px)]">
         {step === "number-select" && (
           <>
             {!sessionStartedPayload && !sessionEndedPayload ? (
@@ -339,7 +339,7 @@ export default function LobbyPage() {
               <>
                 <h1 className="text-2xl font-bold mb-4">
                   {isDisabled
-                    ? "You missed the session that is currently on, please wait for the next session."
+                    ? "You missed the session that is currently on, please wait next session starts shortly."
                     : "Select a number between 1 and 10, to join game."}
                 </h1>
                 {!isDisabled && (

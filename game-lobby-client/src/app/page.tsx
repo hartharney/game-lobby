@@ -27,7 +27,7 @@ export default function LandingPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#2c2d59] to-[#1a1a2e] text-white flex flex-col">
+    <main className="min-h-screen overflow-x-hidden overflow-y-hidden bg-gradient-to-br from-[#2c2d59] to-[#1a1a2e] text-white flex flex-col relative p-6">
       {/* Background Effects */}
       <div className="absolute inset-0">
         <div className="absolute w-72 h-72 bg-purple-600 opacity-30 rounded-full blur-3xl top-[-50px] left-[-50px]"></div>
@@ -64,7 +64,7 @@ export default function LandingPage() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="absolute top-20 left-0 w-full bg-[#2c2d59] flex flex-col gap-6 items-center py-6 md:hidden z-50">
+        <div className="absolute top-21 left-0 w-full bg-[#2c2d59] flex flex-col gap-6 items-center py-6 md:hidden z-50">
           <Link href="/leaderboard" className="hover:text-purple-300 text-lg">
             Leaderboard
           </Link>
