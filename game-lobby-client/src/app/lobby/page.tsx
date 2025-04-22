@@ -43,6 +43,8 @@ export default function LobbyPage() {
   const { data: activeSessionData } = useActiveSession();
   const { data: userHistory } = useGetUserHistory();
 
+  const selectedNumberRef = useRef<number | null>(null);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [winningNumber, setWinningNumber] = useState<number | null>(null);
   const [winners, setWinners] = useState<Winner[] | null>([]);
@@ -57,6 +59,7 @@ export default function LobbyPage() {
   const [result, setResult] = useState<"result-win" | "result-lose" | null>(
     null
   );
+
   const [isPlaying, setIsPlaying] = useState(true);
 
   const [currentStream, setCurrentStream] = useState(getRandomStream());
@@ -68,6 +71,7 @@ export default function LobbyPage() {
 
   const handleNumberSelect = async (num: number) => {
     setSelectedNumber(num);
+    selectedNumberRef.current = num;
     joinLobby(num);
     setStep("waiting");
   };
@@ -75,6 +79,7 @@ export default function LobbyPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setStep("number-select");
+    selectedNumberRef.current = null;
   };
 
   const formatTime = (isoString: string | null) => {
@@ -171,7 +176,7 @@ export default function LobbyPage() {
     setWinningNumber(winner as number);
     setWinners(sessionEndedPayload?.winners || []);
 
-    if (selectedNumber === winner) setResult("result-win");
+    if (selectedNumberRef.current === winner) setResult("result-win");
     else setResult("result-lose");
 
     setIsModalOpen(true);
@@ -296,11 +301,25 @@ export default function LobbyPage() {
             {!sessionStartedPayload && !sessionEndedPayload ? (
               <>
                 <h1 className="text-2xl font-bold mb-4">
-                  No current running sessions ⏳
-                </h1>
-                <p className="text-sm text-gray-300 mb-4">
                   Please hold on — a new session will begin shortly.
-                </p>
+                </h1>
+                <div className="flex flex-col items-center justify-center space-y-2 mb-4">
+                  <div className="flex space-x-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" />
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce delay-150" />
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce delay-300" />
+                  </div>
+                  <p className="text-md text-white">
+                    Propagating environment and onboarding players, please
+                    wait...
+                  </p>
+                </div>
+                {timeRemainingInSeconds && (
+                  <>
+                    <p className="text-sm">New session starts in</p>
+                    <CountdownTimer duration={timeRemainingInSeconds} />
+                  </>
+                )}
               </>
             ) : activeSessionData?.activeSession ? (
               <>
@@ -319,14 +338,15 @@ export default function LobbyPage() {
             ) : (
               <>
                 <h1 className="text-2xl font-bold mb-4">
-                  Choose your lucky number! 🎲
+                  {isDisabled
+                    ? "You missed the session that is currently on, please wait for the next session."
+                    : "Select a number between 1 and 10, to join game."}
                 </h1>
-                <p className="text-sm text-gray-300 mb-4">
-                  {"Once selected, you'll be added to the lobby."}
-                </p>
-                <p className="text-sm text-gray-300 mb-4">
-                  {"Select a number between 1 and 10. Game starts soon"}
-                </p>
+                {!isDisabled && (
+                  <p className="text-md text-gray-300 mb-4">
+                    Choose your lucky number! 🎲
+                  </p>
+                )}
                 {nextSessionTime !== null && (
                   <CountdownTimer
                     duration={getRemainingSeconds(nextSessionTime as string)}
@@ -335,6 +355,7 @@ export default function LobbyPage() {
                 {/* {timeRemainingInSeconds !== null && (
                   <CountdownTimer duration={timeRemainingInSeconds} />
                 )} */}
+
                 <div className="flex gap-4 mt-6 flex-wrap z-10">
                   {numberBalls.map((num) => (
                     <motion.div
@@ -360,21 +381,39 @@ export default function LobbyPage() {
 
         {step === "waiting" && (
           <>
-            <h1 className="text-2xl font-bold mb-4">
+            {/* <h1 className="text-2xl font-bold mb-4">
               {" Welcome to the Lobby, It's about to get real! 🎉"}
-            </h1>
-
-            <h1 className="text-3xl font-bold mb-4">Game in progress! 🎲</h1>
-            <p className="text-gray-300 mb-4">
-              Waiting for the winning number...
-            </p>
+            </h1> */}
 
             <div className="mt-4 mb-4 text-center z-10 space-y-3">
-              {timeRemainingInSeconds && (
+              {timeRemainingInSeconds ? (
                 <>
-                  <p className="text-sm">Session ends in</p>
+                  <h1 className="text-3xl font-bold mb-4">
+                    Game in progress! 🎲
+                  </h1>
+
+                  <p className="text-sm">Find out the winner in</p>
                   <CountdownTimer duration={timeRemainingInSeconds} />
                 </>
+              ) : (
+                <div className="flex flex-col items-center justify-center space-y-2 mb-4">
+                  <div className="flex space-x-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" />
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce delay-150" />
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce delay-300" />
+                  </div>
+                  <p className="text-md text-white">
+                    Please wait, setting game conditions...
+                  </p>
+                  {nextSessionTime !== null &&
+                    getRemainingSeconds(nextSessionTime as string) !== 0 && (
+                      <CountdownTimer
+                        duration={getRemainingSeconds(
+                          nextSessionTime as string
+                        )}
+                      />
+                    )}
+                </div>
               )}
             </div>
 
@@ -403,14 +442,12 @@ export default function LobbyPage() {
             </motion.div>
 
             <div>
-              {selectedNumber !== null ? (
+              {selectedNumber !== null && (
                 <>
                   <p className="text-xl">
                     ✅ {username} joined with number {selectedNumber}!
                   </p>
                 </>
-              ) : (
-                "You missed joining this session — please wait for the next one."
               )}
             </div>
           </>

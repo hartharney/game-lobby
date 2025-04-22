@@ -6,15 +6,19 @@ import { Loader, Eye, EyeOff } from "lucide-react";
 // import { FcGoogle } from "react-icons/fc";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useSessionSocket } from "@/hooks/useSessionSocket";
 
 type LoginPageProps = {
   onClose?: () => void;
 };
 
 export default function LoginPage({ onClose }: LoginPageProps) {
+  const router = useRouter();
   const [form, setForm] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const { mutate, isPending } = useLogin();
+  const {} = useSessionSocket();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -39,6 +43,7 @@ export default function LoginPage({ onClose }: LoginPageProps) {
     setForm({ username: "", password: "" });
     setShowPassword(false);
     if (onClose) onClose();
+    router.push("/lobby");
   };
 
   // const handleGoogleLogin = () => {

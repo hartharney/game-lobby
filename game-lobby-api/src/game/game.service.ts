@@ -50,26 +50,52 @@ export class GameService implements OnModuleInit {
         activeSession.endsAt.getTime() + this.gapBetweenSessions,
       );
 
-      // Calculate remaining time for this session
       const remainingTime = activeSession.endsAt.getTime() - now.getTime();
 
-      // Schedule the winner reveal + next session scheduling after the remaining time
       setTimeout(() => {
         this.revealWinnerAndScheduleNext().catch((err) => {
           console.error('Error revealing winner:', err);
         });
       }, remainingTime);
-
-      return;
+    } else {
+      await this.sessionModel.updateMany(
+        { isActive: true },
+        { isActive: false },
+      );
+      await this.startSession();
     }
 
-    await this.sessionModel.updateMany({ isActive: true }, { isActive: false });
-    await this.startSession();
+    await this.broadcastGameState();
   }
 
   async syncStateToClient(socket: Socket) {
     const state = await this.getCurrentState();
     this.gameGateway.sendStateToClient(socket, state);
+
+    if (state.status === 'active') {
+      this.gameGateway.sessionStarted(
+        {
+          startedAt: state.startedAt as Date,
+          endsAt: state.endsAt as Date,
+          nextSessionStartsAt: this.nextSessionTime,
+        },
+        socket,
+      );
+    } else {
+      this.gameGateway.sessionEnded(
+        {
+          winningNumber: null,
+          winners: [],
+          nextSessionStartsAt: this.nextSessionTime,
+        },
+        socket,
+      );
+    }
+  }
+
+  async broadcastGameState() {
+    const state = await this.getCurrentState();
+    this.gameGateway.broadcastStateToClients(state);
   }
 
   async joinLobby(userId: string, username: string, pickedNumber: number) {
