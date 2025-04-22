@@ -3,18 +3,18 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-import { CountdownTimer } from "@/components/transitions/CountdownTimer";
+import { CountdownTimer } from "../../components/transitions/CountdownTimer";
 
-import { useJoinLobby } from "@/api/mutation";
+import { useJoinLobby } from "../../api/mutation";
 import { useActiveSession, useGetUserHistory } from "@/api/query";
-import { useSessionSocket } from "@/hooks/useSessionSocket";
+import { useSessionSocket } from "../../hooks/useSessionSocket";
 
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 import { FaUser } from "react-icons/fa";
 import { FaArrowRight, FaHome, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
-import ResultModal from "@/components/modal/ResultModal";
-import { Winner } from "@/types";
+import ResultModal from "../../components/modal/ResultModal";
+import { Winner } from "../../types";
 
 const streamUrls = [
   "https://stream.zeno.fm/3f6bg86spm0uv",

@@ -5,7 +5,7 @@ import {
   SessionEndedPayload,
   SessionStartedPayload,
   SocketState,
-} from "@/types";
+} from "../types";
 
 export const useSocketStore = create<SocketState>((set) => ({
   socket: null,

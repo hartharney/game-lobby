@@ -1,4 +1,4 @@
-import { useSocketStore } from "@/api/subscriber";
+import { useSocketStore } from "../api/subscriber";
 import { useEffect } from "react";
 
 export const useSessionSocket = () => {

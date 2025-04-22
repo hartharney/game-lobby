@@ -1,13 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/axios";
-import { useAuthStore } from "@/store/useAuthStore";
+import api from "../lib/axios";
+import { useAuthStore } from "../store/useAuthStore";
 import toast from "react-hot-toast";
 import {
   ApiError,
   LoginPayload,
   LoginResponse,
   RegisterPayload,
-} from "@/types";
+} from "../types";
 
 // --- START SESSION ---
 export const useStartSession = () => {

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useLogin } from "@/api/mutation";
+import { useLogin } from "../../api/mutation";
 import { Loader, Eye, EyeOff } from "lucide-react";
 // import { FcGoogle } from "react-icons/fc";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useSessionSocket } from "@/hooks/useSessionSocket";
+import { useSessionSocket } from "../../hooks/useSessionSocket";
 
 type LoginPageProps = {
   onClose?: () => void;

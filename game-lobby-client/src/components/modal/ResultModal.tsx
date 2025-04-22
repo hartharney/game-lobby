@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { Winner } from "@/types";
+import { Winner } from "../../types";
 
 interface ResultModalProps {
   step: "result-win" | "result-lose" | null;
