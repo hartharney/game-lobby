@@ -6,7 +6,7 @@ import Image from "next/image";
 import { FiMenu, FiX } from "react-icons/fi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AuthModal from "@/components/modal/AuthModal";
+import AuthModal from "../components/modal/AuthModal";
 import { useSessionSocket } from "../hooks/useSessionSocket";
 
 export default function LandingPage() {
