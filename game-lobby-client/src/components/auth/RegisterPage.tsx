@@ -7,11 +7,13 @@ import toast from "react-hot-toast";
 import { Eye, EyeOff } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import axios from "axios";
+import { useSessionSocket } from "@/hooks/useSessionSocket";
 
 type RegisterPageProps = {
   onClose?: () => void;
 };
 export default function RegisterPage({ onClose }: RegisterPageProps) {
+  const {} = useSessionSocket();
   const [form, setForm] = useState({
     username: "",
     email: "",

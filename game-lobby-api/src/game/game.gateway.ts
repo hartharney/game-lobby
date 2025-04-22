@@ -59,27 +59,46 @@ export class GameGateway implements OnGatewayConnection {
       });
   }
 
-  // Notify all clients when a session starts
-  sessionStarted(payload: {
-    endsAt: Date;
-    startedAt: Date;
-    nextSessionStartsAt: Date;
-  }) {
-    this.logger.log('🚀 Session started!', payload);
-    this.server.emit('sessionStarted', payload);
+  // Notify all clients or a specific client when a session starts
+  sessionStarted(
+    payload: {
+      endsAt: Date;
+      startedAt: Date;
+      nextSessionStartsAt: Date | null;
+    },
+    socket?: Socket,
+  ) {
+    this.logger.log(
+      `🚀 Session started! ${socket ? '(to specific client)' : '(to all)'}`,
+      payload,
+    );
+
+    if (socket) {
+      socket.emit('sessionStarted', payload);
+    } else {
+      this.server.emit('sessionStarted', payload);
+    }
   }
 
-  // Notify all clients when a session ends
-  sessionEnded(payload: {
-    winningNumber: number;
-    winners: any[];
-    nextSessionStartsAt: Date;
-  }) {
-    this.logger.log('🎉 Session ended!', payload);
-    this.server.emit('sessionEnded', payload);
+  // Notify all clients or a specific client when a session ends
+  sessionEnded(
+    payload: {
+      winningNumber: number | null;
+      winners: any[];
+      nextSessionStartsAt: Date | null;
+    },
+    socket?: Socket,
+  ) {
+    this.logger.log(
+      `🎉 Session ended! ${socket ? '(to specific client)' : '(to all)'}`,
+      payload,
+    );
 
-    // Clear lobby state after session
-    // this.players = [];
+    if (socket) {
+      socket.emit('sessionEnded', payload);
+    } else {
+      this.server.emit('sessionEnded', payload);
+    }
   }
 
   // Notify all clients when no session runs (optional)
@@ -103,5 +122,9 @@ export class GameGateway implements OnGatewayConnection {
   // Send state updates to a specific client
   sendStateToClient(socket: Socket, state: any) {
     socket.emit('stateUpdate', state);
+  }
+
+  broadcastStateToClients(state: any) {
+    this.server.emit('stateUpdate', state);
   }
 }

@@ -8,6 +8,8 @@ import { GameModule } from './game/game.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import * as dotenv from 'dotenv';
+import { UptimeService } from './uptime.service';
+import { HttpModule } from '@nestjs/axios';
 dotenv.config();
 
 @Module({
@@ -16,6 +18,7 @@ dotenv.config();
     AuthModule,
     UserModule,
     GameModule,
+    HttpModule,
   ],
   controllers: [AppController],
   providers: [
@@ -23,6 +26,7 @@ dotenv.config();
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
     },
+    UptimeService,
   ],
 })
 export class AppModule {}

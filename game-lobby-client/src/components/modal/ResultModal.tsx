@@ -22,8 +22,10 @@ const ResultModal: React.FC<ResultModalProps> = ({
   const isWin = step === "result-win";
 
   useEffect(() => {
-    if (step === "result-win") fireConfetti();
-  }, [step]);
+    if (isWin) fireConfetti();
+  }, [isWin]);
+
+  if (!step) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
