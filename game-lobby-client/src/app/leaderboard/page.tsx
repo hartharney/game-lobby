@@ -1,6 +1,6 @@
 "use client";
 
-import { useLeaderboard } from "@/api/query";
+import { useLeaderboard } from "../../api/query";
 import { useMemo } from "react";
 import {
   useReactTable,

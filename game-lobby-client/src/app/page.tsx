@@ -7,7 +7,7 @@ import { FiMenu, FiX } from "react-icons/fi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AuthModal from "@/components/modal/AuthModal";
-import { useSessionSocket } from "@/hooks/useSessionSocket";
+import { useSessionSocket } from "../hooks/useSessionSocket";
 
 export default function LandingPage() {
   const router = useRouter();

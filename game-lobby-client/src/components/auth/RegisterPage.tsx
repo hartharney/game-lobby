@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRegister } from "@/api/mutation";
+import { useRegister } from "../../api/mutation";
 import toast from "react-hot-toast";
 // import { FcGoogle } from "react-icons/fc";
 import { Eye, EyeOff } from "lucide-react";
 import { FaSpinner } from "react-icons/fa";
 import axios from "axios";
-import { useSessionSocket } from "@/hooks/useSessionSocket";
+import { useSessionSocket } from "../../hooks/useSessionSocket";
 
 type RegisterPageProps = {
   onClose?: () => void;
