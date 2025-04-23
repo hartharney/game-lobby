@@ -337,6 +337,13 @@ export default function LobbyPage() {
               </>
             ) : (
               <>
+                <div className="flex flex-col items-center justify-center space-y-2 mb-4">
+                  <div className="flex space-x-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" />
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce delay-150" />
+                    <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce delay-300" />
+                  </div>
+                </div>
                 <h1 className="text-2xl font-bold mb-4">
                   {isDisabled
                     ? "You missed the session that is currently on, please wait next session starts shortly."
@@ -393,7 +400,18 @@ export default function LobbyPage() {
                   </h1>
 
                   <p className="text-sm">Find out the winner in</p>
-                  <CountdownTimer duration={timeRemainingInSeconds} />
+                  {timeRemainingInSeconds > 0 ? (
+                    <CountdownTimer duration={timeRemainingInSeconds} />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center space-y-2 mb-4">
+                      <p className="text-sm">Analyzing</p>
+                      <div className="flex space-x-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" />
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce delay-150" />
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce delay-300" />
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center space-y-2 mb-4">
