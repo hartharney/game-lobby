@@ -301,7 +301,7 @@ export default function LobbyPage() {
             {!sessionStartedPayload && !sessionEndedPayload ? (
               <>
                 <h1 className="text-2xl font-bold mb-4">
-                  Please hold on — a new session will begin shortly.
+                  Please hold on — Checking active sessions.
                 </h1>
                 <div className="flex flex-col items-center justify-center space-y-2 mb-4">
                   <div className="flex space-x-2">
@@ -346,7 +346,7 @@ export default function LobbyPage() {
                 </div>
                 <h1 className="text-2xl font-bold mb-4">
                   {isDisabled
-                    ? "You missed the session that is currently on, please wait next session starts shortly."
+                    ? "A session is currently on, please wait next session starts shortly."
                     : "Select a number between 1 and 10, to join game."}
                 </h1>
                 {!isDisabled && (
